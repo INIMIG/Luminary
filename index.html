@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Luminary • 深海光學戰場</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 50% -10%, rgba(88, 178, 255, 0.22), transparent 34%),
+          radial-gradient(circle at 82% 10%, rgba(80, 122, 255, 0.14), transparent 30%),
+          linear-gradient(180deg, #06101c 0%, #040914 42%, #02050b 100%);
+      }
+
+      body {
+        color: #edf6ff;
+        letter-spacing: 0.01em;
+      }
+
+      #app {
+        position: fixed;
+        inset: 0;
+      }
+
+      #app::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 50% 110%, rgba(4, 8, 14, 0.1), rgba(2, 5, 9, 0.72) 55%, rgba(0, 0, 0, 0.92)),
+          linear-gradient(180deg, rgba(6, 14, 23, 0.06), rgba(0, 0, 0, 0.24));
+        pointer-events: none;
+      }
+
+      #ui {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        grid-template-columns: minmax(340px, 470px) 1fr;
+        pointer-events: none;
+      }
+
+      #sidebar {
+        margin: 22px;
+        padding: 22px 22px 28px;
+        border: 1px solid rgba(160, 214, 255, 0.08);
+        border-radius: 28px;
+        background:
+          linear-gradient(180deg, rgba(9, 18, 30, 0.88), rgba(4, 9, 17, 0.72)),
+          radial-gradient(circle at 0% 0%, rgba(104, 184, 255, 0.08), transparent 30%);
+        backdrop-filter: blur(26px) saturate(120%);
+        pointer-events: auto;
+        overflow: auto;
+        max-height: calc(100vh - 44px);
+        box-shadow:
+          0 30px 120px rgba(0, 0, 0, 0.42),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+
+      #brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 210, 255, 0.12);
+        background: rgba(124, 196, 255, 0.05);
+        color: #9ad9ff;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #52bfff;
+        box-shadow: 0 0 12px rgba(82, 191, 255, 0.8);
+      }
+
+      #title {
+        margin-top: 18px;
+        font-size: 36px;
+        line-height: 0.98;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        max-width: 10ch;
+      }
+
+      #intro {
+        margin-top: 14px;
+        color: rgba(222, 235, 251, 0.68);
+        font-size: 14px;
+        line-height: 1.72;
+        max-width: 38ch;
+      }
+
+      #sourceInput {
+        width: 100%;
+        min-height: 152px;
+        resize: vertical;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(138, 190, 233, 0.12);
+        background: linear-gradient(180deg, rgba(8, 16, 27, 0.96), rgba(7, 13, 23, 0.82));
+        color: #eef6ff;
+        outline: none;
+        font: inherit;
+        line-height: 1.72;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+
+      #sourceInput:focus {
+        border-color: rgba(124, 196, 255, 0.36);
+        box-shadow: 0 0 0 3px rgba(124, 196, 255, 0.08), 0 12px 30px rgba(29, 88, 152, 0.18);
+      }
+
+      #sourceStatus {
+        margin-top: 10px;
+        color: #8ed3ff;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .section {
+        margin-top: 24px;
+        padding-top: 22px;
+        border-top: 1px solid rgba(133, 178, 219, 0.08);
+      }
+
+      .section h2 {
+        margin: 0 0 12px;
+        font-size: 11px;
+        color: rgba(188, 221, 247, 0.72);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      #stageTabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .tab,
+      .ghostBtn,
+      .quizOption,
+      .modeBtn {
+        appearance: none;
+        border: 1px solid rgba(132, 175, 219, 0.12);
+        background: linear-gradient(180deg, rgba(14, 24, 38, 0.82), rgba(10, 17, 29, 0.9));
+        color: #eef6ff;
+        border-radius: 18px;
+        cursor: pointer;
+        transition: 0.24s ease;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+
+      .tab {
+        padding: 12px;
+        text-align: left;
+      }
+
+      .tab:hover,
+      .ghostBtn:hover,
+      .quizOption:hover,
+      .modeBtn:hover {
+        border-color: rgba(124, 196, 255, 0.28);
+        transform: translateY(-2px);
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .tab.active {
+        background:
+          radial-gradient(circle at 15% 0%, rgba(90, 172, 255, 0.18), transparent 38%),
+          linear-gradient(180deg, rgba(18, 40, 68, 0.96), rgba(9, 20, 34, 0.98));
+        border-color: rgba(127, 198, 255, 0.38);
+        box-shadow:
+          inset 0 1px 0 rgba(196, 229, 255, 0.08),
+          0 18px 46px rgba(22, 81, 136, 0.18);
+      }
+
+      .tabTitle {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+
+      .tabDesc {
+        margin-top: 6px;
+        color: rgba(232, 240, 255, 0.56);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      #storyTitle {
+        font-size: 28px;
+        font-weight: 750;
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+      }
+
+      #storyLead {
+        margin-top: 10px;
+        color: #95d7ff;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      #storyBody {
+        margin-top: 14px;
+        color: rgba(232, 240, 255, 0.78);
+        font-size: 15px;
+        line-height: 1.82;
+      }
+
+      #storyFacts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .fact {
+        padding: 9px 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(126, 196, 255, 0.12);
+        background: rgba(14, 24, 38, 0.76);
+        color: rgba(223, 239, 255, 0.9);
+        font-size: 12px;
+      }
+
+      .controlLabel {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: rgba(232, 240, 255, 0.86);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .subtle {
+        color: rgba(210, 227, 255, 0.6);
+        font-size: 12px;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        margin-top: 10px;
+        accent-color: #6fd4ff;
+      }
+
+      .chipRow,
+      .btnRow,
+      #quizOptions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .ghostBtn,
+      .quizOption {
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .ghostBtn.active {
+        background: linear-gradient(180deg, rgba(30, 77, 126, 0.58), rgba(11, 29, 49, 0.96));
+        border-color: rgba(124, 196, 255, 0.36);
+      }
+
+      #modeSwitch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .modeBtn {
+        padding: 12px;
+        text-align: left;
+      }
+
+      .modeBtn.active {
+        background:
+          radial-gradient(circle at 10% 0%, rgba(86, 170, 255, 0.16), transparent 34%),
+          linear-gradient(180deg, rgba(16, 40, 63, 0.98), rgba(8, 18, 30, 0.98));
+        border-color: rgba(127, 198, 255, 0.34);
+        box-shadow: 0 16px 40px rgba(35, 91, 153, 0.14);
+      }
+
+      .modeName {
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .modeDesc {
+        margin-top: 6px;
+        color: rgba(232, 240, 255, 0.7);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      #modeStatus {
+        margin-top: 12px;
+        color: rgba(150, 215, 255, 0.8);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      #videoPanel {
+        margin-top: 14px;
+        padding: 16px;
+        border-radius: 22px;
+        border: 1px solid rgba(126, 196, 255, 0.12);
+        background:
+          radial-gradient(circle at 0% 0%, rgba(87, 160, 255, 0.08), transparent 30%),
+          linear-gradient(180deg, rgba(8, 17, 29, 0.9), rgba(5, 11, 20, 0.94));
+      }
+
+      #videoPanel[hidden] {
+        display: none;
+      }
+
+      #videoHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      #videoTitle {
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      #videoState {
+        color: #8ed3ff;
+        font-size: 12px;
+      }
+
+      #videoNarration {
+        margin-top: 14px;
+        color: rgba(235, 244, 255, 0.84);
+        font-size: 14px;
+        line-height: 1.72;
+        min-height: 52px;
+      }
+
+      #voiceStatus {
+        margin-top: 10px;
+        color: rgba(196, 227, 255, 0.78);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      #voiceStatus.is-warning {
+        color: #ffd28a;
+      }
+
+      #voiceStatus.is-muted {
+        color: rgba(210, 227, 255, 0.62);
+      }
+
+      #videoProgress {
+        width: 100%;
+        height: 8px;
+        margin-top: 16px;
+        border-radius: 999px;
+        background: rgba(29, 42, 58, 0.92);
+        overflow: hidden;
+      }
+
+      #videoProgressFill {
+        width: 0%;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(101, 175, 255, 0.25), rgba(130, 226, 255, 1));
+      }
+
+      #videoMeta {
+        margin-top: 10px;
+        color: rgba(210, 227, 255, 0.68);
+        font-size: 12px;
+      }
+
+      .is-disabled {
+        opacity: 0.48;
+      }
+
+      .is-disabled button,
+      .is-disabled input {
+        pointer-events: none;
+      }
+
+      #metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .metricCard {
+        padding: 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(136, 176, 217, 0.1);
+        background: linear-gradient(180deg, rgba(11, 20, 33, 0.86), rgba(8, 15, 26, 0.84));
+      }
+
+      .metricName {
+        color: rgba(206, 223, 245, 0.65);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .metricValue {
+        margin-top: 10px;
+        font-size: 22px;
+        font-weight: 760;
+        letter-spacing: -0.03em;
+      }
+
+      .metricHint {
+        margin-top: 4px;
+        color: rgba(219, 233, 252, 0.62);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      #quizPrompt {
+        color: rgba(236, 244, 255, 0.92);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      #quizFeedback {
+        margin-top: 12px;
+        min-height: 22px;
+        color: #8ed3ff;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      #caption {
+        align-self: end;
+        justify-self: center;
+        width: min(980px, calc(100vw - 500px));
+        margin: 0 20px 28px;
+        padding: 16px 22px;
+        border-radius: 22px;
+        border: 1px solid rgba(124, 196, 255, 0.1);
+        background: linear-gradient(180deg, rgba(4, 9, 17, 0.52), rgba(5, 9, 15, 0.68));
+        backdrop-filter: blur(18px);
+        color: rgba(240, 247, 255, 0.92);
+        font-size: 15px;
+        line-height: 1.72;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.26);
+        pointer-events: none;
+      }
+
+      #legend {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+        width: min(300px, calc(100vw - 40px));
+        padding: 16px 18px;
+        border-radius: 20px;
+        border: 1px solid rgba(124, 196, 255, 0.08);
+        background: linear-gradient(180deg, rgba(5, 11, 20, 0.48), rgba(5, 11, 20, 0.66));
+        backdrop-filter: blur(18px);
+        color: rgba(233, 243, 255, 0.7);
+        font-size: 12px;
+        line-height: 1.68;
+        pointer-events: none;
+      }
+
+      #legend strong {
+        color: #d9efff;
+      }
+
+      @media (max-width: 1080px) {
+        #ui {
+          grid-template-columns: 1fr;
+        }
+
+        #sidebar {
+          width: min(460px, calc(100vw - 24px));
+          margin: 12px;
+          max-height: calc(100vh - 24px);
+        }
+
+        #caption {
+          width: min(92vw, 760px);
+          margin-bottom: 14px;
+        }
+
+        #legend {
+          top: auto;
+          bottom: 96px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        #stageTabs,
+        #metrics {
+          grid-template-columns: 1fr;
+        }
+
+        #legend {
+          display: none;
+        }
+
+        #caption {
+          font-size: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="ui">
+      <aside id="sidebar">
+        <div id="brand">
+          <div class="eyebrow"><span class="dot"></span>Luminary • Three.js 教學場景</div>
+        </div>
+
+        <div id="title">深海光學戰場</div>
+        <div id="intro">
+          這個互動場景把文章拆成 4 個可操作的 3D 實驗，讓你直接觀察「光怎麼被海水剝奪、生物怎麼利用光隱身、掠食者又如何破解隱身」。
+        </div>
+
+        <section class="section">
+          <h2>內容生成</h2>
+          <textarea id="sourceInput" placeholder="貼上任意文章、筆記、腳本或段落。系統會自動切成章節，生成解說影片與 3D 互動。"></textarea>
+          <div class="btnRow">
+            <button class="ghostBtn" id="generateBtn">生成互動與影片</button>
+            <button class="ghostBtn" id="loadDefaultBtn">載入預設 demo</button>
+            <button class="ghostBtn" id="loadSpaceDemoBtn">載入宇宙 demo</button>
+          </div>
+          <div id="sourceStatus">目前載入：預設 demo《深海光學戰場》</div>
+        </section>
+
+        <section class="section">
+          <h2>模式切換</h2>
+          <div id="modeSwitch">
+            <button class="modeBtn active" id="interactiveModeBtn">
+              <div class="modeName">互動模式</div>
+              <div class="modeDesc">自由切章、自己調參數、手動探索場景。</div>
+            </button>
+            <button class="modeBtn" id="videoModeBtn">
+              <div class="modeName">影片解說</div>
+              <div class="modeDesc">自動播放旁白、鏡頭運鏡與章節切換。</div>
+            </button>
+          </div>
+          <div id="modeStatus">目前模式：互動模式</div>
+
+          <div id="videoPanel" hidden>
+            <div id="videoHead">
+              <div id="videoTitle">影片解說</div>
+              <div id="videoState">尚未播放</div>
+            </div>
+            <div id="videoNarration">切換到影片模式後，系統會自動依序解說四個章節。</div>
+            <div id="voiceStatus">語音旁白待命中，首次播放需由你手動點一下。</div>
+            <div id="videoProgress"><div id="videoProgressFill"></div></div>
+            <div class="btnRow">
+              <button class="ghostBtn" id="videoPlayPauseBtn">播放</button>
+              <button class="ghostBtn" id="videoRestartBtn">重新播放</button>
+              <button class="ghostBtn" id="voiceToggleBtn">語音：開啟</button>
+            </div>
+            <div id="videoMeta">0 / 0</div>
+          </div>
+        </section>
+
+        <section class="section" id="stageSection">
+          <h2>章節切換</h2>
+          <div id="stageTabs"></div>
+        </section>
+
+        <section class="section">
+          <div id="storyTitle"></div>
+          <div id="storyLead"></div>
+          <div id="storyBody"></div>
+          <div id="storyFacts"></div>
+        </section>
+
+        <section class="section" id="controlSection">
+          <h2>互動控制</h2>
+          <div class="controlLabel">
+            <span id="controlName">深度</span>
+            <span id="depthValue">200 m</span>
+          </div>
+          <div class="subtle" id="controlHint">拖動深度來改變剩餘光譜與整體環境亮度。</div>
+          <input id="depthSlider" type="range" min="0" max="1200" value="200" step="10" />
+          <div class="chipRow" id="depthPresets"></div>
+
+          <div class="btnRow" id="counterControls" style="display:none;">
+            <button class="ghostBtn" id="counterToggle">腹部發光：開啟</button>
+          </div>
+
+          <div class="btnRow" id="redControls" style="display:none;">
+            <button class="ghostBtn" id="probeToggle">紅光照射：關閉</button>
+          </div>
+
+          <div id="hunterControls" style="display:none;">
+            <div class="btnRow">
+              <button class="ghostBtn" id="hunterToggle">紅光探照燈：開啟</button>
+            </div>
+            <div class="btnRow" id="visionModes">
+              <button class="ghostBtn active" data-mode="omniscient">全知視角</button>
+              <button class="ghostBtn" data-mode="prey">獵物視角</button>
+              <button class="ghostBtn" data-mode="hunter">獵手視角</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>關鍵指標</h2>
+          <div id="metrics"></div>
+        </section>
+
+        <section class="section" id="quizSection">
+          <h2>理解檢查</h2>
+          <div id="quizPrompt"></div>
+          <div id="quizOptions"></div>
+          <div id="quizFeedback"></div>
+        </section>
+      </aside>
+
+      <div id="caption"></div>
+    </div>
+
+    <div id="legend">
+      <strong>操作提示</strong><br />
+      先貼上文字可生成新的教學內容；不輸入時可回到預設 demo。<br />
+      互動模式下可拖曳旋轉視角，滾輪可縮放。<br />
+      影片解說模式下會自動運鏡與切章。<br />
+      點擊場景中的魚腹光點、紅蝦、黑巨口魚紅燈，可看到補充解說。<br />
+      建議依序體驗四個章節，最能對應原文的推理脈絡。
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.165.0/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
