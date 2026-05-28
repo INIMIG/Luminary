@@ -1,0 +1,82 @@
+{
+  "_comment": "Multi-character dialogue for Luminary's default deep-sea demo. Speakers map to OpenAI TTS voices: narrator=alloy, prey=nova, predator=onyx. Each segment matches an entry in DEFAULT_VIDEO_SEGMENTS by stage+order. Edit text freely, but keep speaker names exact.",
+  "voiceMap": {
+    "narrator": "alloy",
+    "prey": "nova",
+    "predator": "onyx"
+  },
+  "segments": [
+    {
+      "stage": "spectrum",
+      "order": 0,
+      "lines": [
+        { "speaker": "narrator", "text": "第一節：被剝奪的光譜。把海水想像成一個巨大的光譜過濾器。" },
+        { "speaker": "narrator", "text": "陽光剛進入水面時，紅光最先被吸收。鮮紅色，在這裡很快就失去了存在的條件。" }
+      ]
+    },
+    {
+      "stage": "spectrum",
+      "order": 1,
+      "lines": [
+        { "speaker": "narrator", "text": "下沉到約兩百米的中層帶，世界只剩下微弱的藍綠光。" },
+        { "speaker": "narrator", "text": "這不是單純變暗，而是波長被一層一層剝掉之後，僅存的殘光。" }
+      ]
+    },
+    {
+      "stage": "counter",
+      "order": 0,
+      "lines": [
+        { "speaker": "narrator", "text": "第二節：操縱光線的魔術師。" },
+        { "speaker": "predator", "text": "（從深處仰望）我在等待——任何一道從上方落下的黑色剪影。" },
+        { "speaker": "prey", "text": "我知道你在下面看。所以我點亮了腹部，把上方的微光，原封不動還給你。" },
+        { "speaker": "narrator", "text": "這就是反向照明：不是隱形，而是讓自己的亮度，剛好等於背景。" }
+      ]
+    },
+    {
+      "stage": "counter",
+      "order": 1,
+      "lines": [
+        { "speaker": "prey", "text": "（關閉腹部光）……如果我把光關掉呢？" },
+        { "speaker": "predator", "text": "找到你了。一塊黑影，在藍色背景上，再清楚不過。" },
+        { "speaker": "narrator", "text": "反向照明的本質是亮度匹配，不是華麗變色。差別，只在一念之間。" }
+      ]
+    },
+    {
+      "stage": "red",
+      "order": 0,
+      "lines": [
+        { "speaker": "narrator", "text": "第三節：紅色的終極悖論。深度八百米，這裡幾乎沒有紅光。" },
+        { "speaker": "prey", "text": "我穿著鮮紅色的外衣，但沒有紅光可以反射。我吸收掉所有殘餘的藍綠光——於是我，就變成了一片黑。" },
+        { "speaker": "narrator", "text": "在陸地上最張揚的顏色，在深海，成了最徹底的隱形斗篷。" }
+      ]
+    },
+    {
+      "stage": "red",
+      "order": 1,
+      "lines": [
+        { "speaker": "narrator", "text": "但若有人從外界，重新打進一道紅光——" },
+        { "speaker": "prey", "text": "（驚）為什麼……我突然亮了？" },
+        { "speaker": "narrator", "text": "她的紅色色素瞬間反射，從黑洞變成燈塔。隱形與暴露，只差一道光。" }
+      ]
+    },
+    {
+      "stage": "hunter",
+      "order": 0,
+      "lines": [
+        { "speaker": "narrator", "text": "第四節：紅光刺客登場。切換到獵物視角。" },
+        { "speaker": "prey", "text": "周圍，一片漆黑。我看不見紅光，所以紅光對我來說，等於不存在。" },
+        { "speaker": "predator", "text": "她以為自己藏得很完美——但我，看得見她。" }
+      ]
+    },
+    {
+      "stage": "hunter",
+      "order": 1,
+      "lines": [
+        { "speaker": "narrator", "text": "切到獵手視角。黑巨口魚打開了她獨有的紅色探照燈。" },
+        { "speaker": "predator", "text": "妳知道嗎？妳的紅色，正在我的紅光下，亮得像火焰一樣。" },
+        { "speaker": "prey", "text": "（迷惑）但是……什麼？我看不到任何光！" },
+        { "speaker": "narrator", "text": "勝負的關鍵，從來不是速度。而是——誰能用別人看不見的光，去看見別人。" }
+      ]
+    }
+  ]
+}

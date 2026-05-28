@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "https://unpkg.com/three@0.165.0/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://unpkg.com/three@0.165.0/examples/jsm/loaders/GLTFLoader.js";
+import { EffectComposer } from "https://unpkg.com/three@0.165.0/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "https://unpkg.com/three@0.165.0/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "https://unpkg.com/three@0.165.0/examples/jsm/postprocessing/UnrealBloomPass.js";
 
 const app = document.getElementById("app");
 const projectTitleEl = document.getElementById("title");
@@ -48,6 +51,16 @@ const voiceStatusEl = document.getElementById("voiceStatus");
 const stageSectionEl = document.getElementById("stageSection");
 const controlSectionEl = document.getElementById("controlSection");
 const quizSectionEl = document.getElementById("quizSection");
+const askSectionEl = document.getElementById("askSection");
+const askModeAskBtnEl = document.getElementById("askModeAskBtn");
+const askModeAnswerBtnEl = document.getElementById("askModeAnswerBtn");
+const askPromptEl = document.getElementById("askPrompt");
+const askInputEl = document.getElementById("askInput");
+const askMicBtnEl = document.getElementById("askMicBtn");
+const askSubmitBtnEl = document.getElementById("askSubmitBtn");
+const askClearBtnEl = document.getElementById("askClearBtn");
+const askStatusEl = document.getElementById("askStatus");
+const askResponseEl = document.getElementById("askResponse");
 
 const DEFAULT_SOURCE_LABEL = "預設 demo《深海光學戰場》";
 const SPACE_SOURCE_LABEL = "預設 demo《宇宙尺度之旅》";
@@ -91,6 +104,7 @@ const DEFAULT_STAGES = [
         { text: "因為深海生物普遍會發出紅光", correct: false, feedback: "不對。大多數深海生物反而看不到紅光，會發紅光的是少數特殊掠食者。" },
       ],
     },
+    openPrompt: "用自己的話解釋：為什麼海水會被稱為「光譜過濾器」？",
     camera: { pos: [0, 1.3, 9.6], target: [0, 0.2, 0] },
     defaultDepth: 200,
   },
@@ -111,6 +125,7 @@ const DEFAULT_STAGES = [
         { text: "把全身變成鮮紅色", correct: false, feedback: "不對。鮮紅色是更深水域另一種吸光策略，不是反向照明。" },
       ],
     },
+    openPrompt: "用自己的話解釋：為什麼掠食者要從下往上找剪影，而反向照明能對抗這件事？",
     camera: { pos: [0.15, -0.1, 7.4], target: [0.05, 0.05, 0] },
     defaultDepth: 200,
   },
@@ -131,6 +146,7 @@ const DEFAULT_STAGES = [
         { text: "因為牠吸收殘餘藍綠光，但沒有紅光可反射", correct: true, feedback: "正確。這就是文章說的『紅色悖論』。" },
       ],
     },
+    openPrompt: "用自己的話解釋：為什麼一隻在陸地上鮮紅色的蝦，到了八百米深處反而像黑色？",
     camera: { pos: [-0.45, 0.65, 7.7], target: [0.1, -0.1, 0] },
     defaultDepth: 800,
   },
@@ -151,6 +167,7 @@ const DEFAULT_STAGES = [
         { text: "牠會把自己塗成藍色", correct: false, feedback: "不對。顏色不是重點，紅光偵測能力才是關鍵。" },
       ],
     },
+    openPrompt: "用自己的話描述：黑巨口魚的紅光探照燈為什麼是一種「演化外掛」，它打破了哪一條規則？",
     camera: { pos: [0.25, 0.55, 8.6], target: [0.4, -0.15, 0] },
     defaultDepth: 900,
   },
@@ -185,6 +202,7 @@ const state = {
   quizAnswered: {},
   video: {
     activeIndex: 0,
+    activeLineIndex: 0,
     playing: false,
     segmentStartMs: 0,
     pausedElapsedMs: 0,
@@ -200,6 +218,7 @@ const state = {
     paused: false,
     activeKey: "",
     activeText: "",
+    activeSpeaker: "",
     selectedVoiceName: "",
     source: "none",
   },
@@ -217,8 +236,13 @@ let pendingTtsRequestId = 0;
 const gltfLoader = new GLTFLoader();
 const externalModelActors = [];
 
+const SPEAKER_VOICES = { narrator: "alloy", prey: "nova", predator: "onyx" };
+const SPEAKER_LABELS = { narrator: "🎙️ 旁白", prey: "🦐 獵物", predator: "🦈 掠食者" };
+let dialogueLoaded = false;
+let activeLineSequence = null;
+
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x06111b, 5, 22);
+scene.fog = new THREE.Fog(0x06111b, 4.5, 20);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
 camera.position.set(0, 1.1, 9.5);
@@ -231,6 +255,26 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.18;
 renderer.setClearColor(0x07101a, 1);
 app.appendChild(renderer.domElement);
+
+let composer = null;
+let bloomPass = null;
+let postProcessingEnabled = true;
+try {
+  composer = new EffectComposer(renderer);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  composer.addPass(new RenderPass(scene, camera));
+  bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.78, // strength
+    0.62, // radius
+    0.82, // threshold
+  );
+  composer.addPass(bloomPass);
+} catch (error) {
+  console.warn("Post-processing init failed, falling back to direct render.", error);
+  composer = null;
+  postProcessingEnabled = false;
+}
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -1026,8 +1070,71 @@ function stopBrowserNarration() {
   synth.cancel();
 }
 
+async function loadDialogue() {
+  if (dialogueLoaded) return;
+  try {
+    const response = await fetch("./assets/dialogue.zh-Hant.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`dialogue fetch ${response.status}`);
+    const payload = await response.json();
+    const segments = Array.isArray(payload?.segments) ? payload.segments : [];
+    const counts = new Map();
+    const lookup = new Map();
+    for (const entry of segments) {
+      const stage = String(entry?.stage || "");
+      if (!stage || !Array.isArray(entry.lines) || !entry.lines.length) continue;
+      const order = typeof entry.order === "number" ? entry.order : (counts.get(stage) || 0);
+      counts.set(stage, order + 1);
+      lookup.set(`${stage}:${order}`, entry.lines.map((line) => ({
+        speaker: String(line.speaker || "narrator"),
+        text: String(line.text || "").trim(),
+      })).filter((line) => line.text));
+    }
+
+    const stageCursors = new Map();
+    for (const segment of DEFAULT_VIDEO_SEGMENTS) {
+      const cursor = stageCursors.get(segment.stage) || 0;
+      stageCursors.set(segment.stage, cursor + 1);
+      const lines = lookup.get(`${segment.stage}:${cursor}`);
+      if (lines && lines.length) {
+        segment.lines = lines;
+        const minDuration = lines.length * 3200;
+        if ((segment.durationMs || 0) < minDuration) segment.durationMs = minDuration;
+      }
+    }
+    dialogueLoaded = true;
+    if (state.dataset?.type === "default") {
+      state.dataset.videoSegments = DEFAULT_VIDEO_SEGMENTS.map((segment) => ({ ...segment }));
+    }
+  } catch (error) {
+    console.warn("Failed to load multi-character dialogue.", error);
+  }
+}
+
+function segmentLines(segment) {
+  if (!segment) return [];
+  if (Array.isArray(segment.lines) && segment.lines.length) return segment.lines;
+  if (segment.narration) return [{ speaker: "narrator", text: segment.narration }];
+  return [];
+}
+
+function formatSegmentNarrationDisplay(segment) {
+  const lines = segmentLines(segment);
+  if (!lines.length) return "";
+  if (lines.length === 1) return lines[0].text;
+  return lines.map((line, idx) => {
+    const label = SPEAKER_LABELS[line.speaker] || SPEAKER_LABELS.narrator;
+    const isActive = state.mode === "video" && idx === (state.video.activeLineIndex || 0);
+    return `${isActive ? "▶ " : ""}${label}：${line.text}`;
+  }).join("\n");
+}
+
+function lineCacheKey(line) {
+  const voice = SPEAKER_VOICES[line.speaker] || SPEAKER_VOICES.narrator;
+  return `${voice}:${line.text}`;
+}
+
 function narrationKeyForSegment(segment, index = state.video.activeIndex) {
-  return segment ? `${index}:${segment.stage}:${segment.narration}` : "";
+  return segment ? `${index}:${segment.stage}:${segmentLines(segment).map((l) => l.speaker + "|" + l.text).join("//")}` : "";
 }
 
 function resetVoiceFlags() {
@@ -1043,18 +1150,22 @@ function stopNarration() {
   apiAudio.pause();
   apiAudio.currentTime = 0;
   pendingTtsRequestId += 1;
+  if (activeLineSequence) {
+    activeLineSequence.cancelled = true;
+    activeLineSequence = null;
+  }
   resetVoiceFlags();
 }
 
-async function fetchTtsAudioUrl(segment, index = state.video.activeIndex) {
-  const key = narrationKeyForSegment(segment, index);
+async function fetchLineAudioUrl(line) {
+  const key = lineCacheKey(line);
   if (ttsAudioCache.has(key)) return ttsAudioCache.get(key);
-
   const requestId = ++pendingTtsRequestId;
+  const voice = SPEAKER_VOICES[line.speaker] || SPEAKER_VOICES.narrator;
   const response = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: segment.narration }),
+    body: JSON.stringify({ text: line.text, voice }),
   });
   if (!response.ok) {
     let detail = "";
@@ -1066,7 +1177,6 @@ async function fetchTtsAudioUrl(segment, index = state.video.activeIndex) {
     }
     throw new Error(detail || `TTS request failed (${response.status})`);
   }
-
   const audioBlob = await response.blob();
   if (requestId !== pendingTtsRequestId) throw new Error("stale_tts_request");
   const url = URL.createObjectURL(audioBlob);
@@ -1074,44 +1184,72 @@ async function fetchTtsAudioUrl(segment, index = state.video.activeIndex) {
   return url;
 }
 
-function speakWithBrowser(segment, key) {
-  if (!state.voice.browserSupported || !segment?.narration) return;
-  stopBrowserNarration();
-  const utterance = new SpeechSynthesisUtterance(segment.narration);
-  const chosen = availableVoices.find((voice) => voice.name === state.voice.selectedVoiceName) || preferredVoice(availableVoices);
-  if (chosen) utterance.voice = chosen;
-  utterance.lang = chosen?.lang || "zh-TW";
-  utterance.rate = 1;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-  utterance.onstart = () => {
-    state.voice.speaking = true;
-    state.voice.paused = false;
-    state.voice.activeKey = key;
-    state.voice.activeText = segment.narration;
-    state.voice.source = "browser";
-    updateModeUI();
-  };
-  utterance.onend = () => {
-    if (state.voice.activeKey !== key) return;
-    state.voice.speaking = false;
-    state.voice.paused = false;
-    updateModeUI();
-  };
-  utterance.onerror = () => {
-    if (state.voice.activeKey !== key) return;
-    state.voice.speaking = false;
-    state.voice.paused = false;
-    updateModeUI();
-  };
-  state.voice.activeKey = key;
-  state.voice.activeText = segment.narration;
-  state.voice.source = "browser";
-  synth.speak(utterance);
+function speakLineWithBrowser(line) {
+  return new Promise((resolve) => {
+    if (!state.voice.browserSupported || !line?.text) {
+      resolve();
+      return;
+    }
+    stopBrowserNarration();
+    const utterance = new SpeechSynthesisUtterance(line.text);
+    const chosen = availableVoices.find((voice) => voice.name === state.voice.selectedVoiceName) || preferredVoice(availableVoices);
+    if (chosen) utterance.voice = chosen;
+    utterance.lang = chosen?.lang || "zh-TW";
+    if (line.speaker === "predator") {
+      utterance.pitch = 0.7;
+      utterance.rate = 0.92;
+    } else if (line.speaker === "prey") {
+      utterance.pitch = 1.25;
+      utterance.rate = 1.0;
+    } else {
+      utterance.pitch = 1.0;
+      utterance.rate = 1.0;
+    }
+    utterance.volume = 1;
+    let settled = false;
+    const finish = () => { if (!settled) { settled = true; resolve(); } };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    synth.speak(utterance);
+  });
+}
+
+function playLineApi(line) {
+  return new Promise(async (resolve) => {
+    try {
+      const url = await fetchLineAudioUrl(line);
+      apiAudio.src = url;
+      const onEnd = () => {
+        apiAudio.removeEventListener("ended", onEnd);
+        apiAudio.removeEventListener("error", onErr);
+        resolve(true);
+      };
+      const onErr = () => {
+        apiAudio.removeEventListener("ended", onEnd);
+        apiAudio.removeEventListener("error", onErr);
+        resolve(false);
+      };
+      apiAudio.addEventListener("ended", onEnd);
+      apiAudio.addEventListener("error", onErr);
+      await apiAudio.play();
+    } catch (error) {
+      if (String(error?.message || error) !== "stale_tts_request") {
+        console.warn("TTS API line failed, falling back.", error);
+      }
+      resolve(false);
+    }
+  });
 }
 
 async function speakNarrationForSegment(segment, index = state.video.activeIndex) {
-  if (!state.voice.enabled || !segment?.narration) {
+  if (!state.voice.enabled || !segment) {
+    stopNarration();
+    updateModeUI();
+    return;
+  }
+
+  const lines = segmentLines(segment);
+  if (!lines.length) {
     stopNarration();
     updateModeUI();
     return;
@@ -1121,33 +1259,42 @@ async function speakNarrationForSegment(segment, index = state.video.activeIndex
   if (state.voice.activeKey === key && (state.voice.speaking || state.voice.paused)) return;
 
   stopNarration();
+  const sequence = { cancelled: false, key };
+  activeLineSequence = sequence;
   state.voice.activeKey = key;
-  state.voice.activeText = segment.narration;
+  state.voice.speaking = true;
+  state.voice.paused = false;
 
-  if (state.voice.backendAvailable) {
-    try {
-      const url = await fetchTtsAudioUrl(segment, index);
-      if (state.voice.activeKey !== key || state.mode !== "video" || !state.video.playing || !state.voice.enabled) return;
-      apiAudio.src = url;
-      await apiAudio.play();
-      state.voice.speaking = true;
-      state.voice.paused = false;
-      state.voice.source = "api";
-      updateModeUI();
-      return;
-    } catch (error) {
-      if (String(error?.message || error) !== "stale_tts_request") {
-        console.warn("TTS API failed, falling back to browser speech synthesis.", error);
-      }
+  for (let i = 0; i < lines.length; i += 1) {
+    if (sequence.cancelled || activeLineSequence !== sequence) return;
+    if (state.mode !== "video") return;
+    if (!state.voice.enabled) return;
+
+    const line = lines[i];
+    state.video.activeLineIndex = i;
+    state.voice.activeText = line.text;
+    state.voice.activeSpeaker = line.speaker;
+    state.voice.source = state.voice.backendAvailable ? "api" : "browser";
+    updateModeUI();
+    updateCaption();
+
+    let ok = false;
+    if (state.voice.backendAvailable) {
+      ok = await playLineApi(line);
+      if (sequence.cancelled || activeLineSequence !== sequence) return;
+    }
+    if (!ok && state.voice.browserSupported) {
+      await speakLineWithBrowser(line);
+      if (sequence.cancelled || activeLineSequence !== sequence) return;
     }
   }
 
-  if (state.voice.browserSupported) {
-    speakWithBrowser(segment, key);
-    return;
+  if (activeLineSequence === sequence) {
+    state.voice.speaking = false;
+    state.voice.paused = false;
+    activeLineSequence = null;
+    updateModeUI();
   }
-
-  updateModeUI();
 }
 
 function pauseNarration() {
@@ -1245,7 +1392,7 @@ function updateModeUI(now = performance.now()) {
     : state.video.playing
       ? `播放中 • ${stage?.title || ""}`
       : `暫停中 • ${stage?.title || ""}`;
-  videoNarrationEl.textContent = segment?.narration || "切換到影片模式後，系統會自動依序解說目前載入的章節。";
+  videoNarrationEl.textContent = formatSegmentNarrationDisplay(segment) || "切換到影片模式後，系統會自動依序解說目前載入的章節。";
   videoPlayPauseBtnEl.textContent = state.video.playing ? "暫停" : "播放";
   voiceToggleBtnEl.textContent = `語音：${state.voice.enabled ? "開啟" : "靜音"}`;
   voiceToggleBtnEl.classList.toggle("active", state.voice.enabled && activeVoiceSource() !== "none");
@@ -2528,7 +2675,15 @@ function updateStageMetrics() {
 function stageCaption() {
   const stage = currentStage();
   if (!stage) return "";
-  if (state.mode === "video") return activeVideoSegment()?.narration || "";
+  if (state.mode === "video") {
+    const seg = activeVideoSegment();
+    const lines = segmentLines(seg);
+    if (!lines.length) return seg?.narration || "";
+    const idx = clamp(state.video.activeLineIndex || 0, 0, lines.length - 1);
+    const line = lines[idx];
+    const label = SPEAKER_LABELS[line.speaker] || SPEAKER_LABELS.narrator;
+    return lines.length > 1 ? `${label}：${line.text}` : line.text;
+  }
   if (state.hoverMessage) return state.hoverMessage;
 
   if (state.dataset?.type === "default") {
@@ -2587,6 +2742,7 @@ function applyVideoSegment(index, now = performance.now()) {
   if (!segment) return;
 
   state.video.activeIndex = safeIndex;
+  state.video.activeLineIndex = 0;
   state.video.segmentStartMs = now;
   state.video.pausedElapsedMs = 0;
 
@@ -2686,6 +2842,7 @@ function updateAll() {
   updateStageMetrics();
   updateCaption();
   updateModeUI();
+  if (typeof updateAskPanel === "function") updateAskPanel();
 }
 
 function setDataset(dataset, options = {}) {
@@ -2754,6 +2911,8 @@ function resize() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
+  if (composer) composer.setSize(width, height);
+  if (bloomPass) bloomPass.setSize(width, height);
 }
 
 function animate(now) {
@@ -2799,7 +2958,11 @@ function animate(now) {
   updateCaption();
 
   controls.update();
-  renderer.render(scene, camera);
+  if (composer && postProcessingEnabled) {
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
 }
 
 buildMetrics();
@@ -2875,6 +3038,230 @@ visionModesEl.querySelectorAll(".ghostBtn").forEach((button) => {
   });
 });
 
+// === Ask & Answer panel ===
+const askState = {
+  mode: "ask",
+  busy: false,
+  recording: false,
+  recorder: null,
+  recorderChunks: [],
+  recorderTimer: 0,
+};
+
+function chapterContextForAsk() {
+  const stage = currentStage();
+  if (!stage) return "";
+  const facts = (stage.facts || []).map((f, i) => `- ${f}`).join("\n");
+  return [
+    `章節標題：${stage.title || ""}`,
+    `章節摘要：${stage.lead || ""}`,
+    `章節說明：${stage.body || ""}`,
+    facts ? `關鍵事實：\n${facts}` : "",
+  ].filter(Boolean).join("\n\n");
+}
+
+function setAskStatus(text, kind = "") {
+  askStatusEl.textContent = text || "";
+  askStatusEl.classList.toggle("is-error", kind === "error");
+  askStatusEl.classList.toggle("is-busy", kind === "busy");
+}
+
+function setAskResponse(html, verdict = null) {
+  if (!html) {
+    askResponseEl.classList.remove("is-visible");
+    askResponseEl.innerHTML = "";
+    return;
+  }
+  const verdictBadge = verdict ? `<div class="verdict ${verdict}">${verdictLabel(verdict)}</div>` : "";
+  askResponseEl.innerHTML = `${verdictBadge}<div>${html}</div>`;
+  askResponseEl.classList.add("is-visible");
+}
+
+function verdictLabel(v) {
+  if (v === "correct") return "✓ 答對了";
+  if (v === "partial") return "◐ 部分正確";
+  if (v === "wrong") return "✗ 還沒對";
+  return v;
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+
+function updateAskPanel() {
+  const stage = currentStage();
+  askModeAskBtnEl.classList.toggle("active", askState.mode === "ask");
+  askModeAnswerBtnEl.classList.toggle("active", askState.mode === "answer");
+  if (askState.mode === "answer") {
+    const prompt = stage?.openPrompt || "用自己的話總結這一節最重要的觀念。";
+    askPromptEl.textContent = `題目：${prompt}`;
+    askInputEl.placeholder = "用一兩句話寫下你的答案，AI 會用本章內容判斷對不對。";
+    askSubmitBtnEl.textContent = "提交答案";
+  } else {
+    askPromptEl.textContent = "對這一節有任何疑問都可以直接問。AI 會用本章內容回答你。";
+    askInputEl.placeholder = "例如：為什麼紅色在深海會變黑？";
+    askSubmitBtnEl.textContent = "詢問";
+  }
+}
+
+async function submitAsk() {
+  if (askState.busy) return;
+  const userText = askInputEl.value.trim();
+  if (!userText) {
+    setAskStatus("請先輸入或錄音問題。", "error");
+    return;
+  }
+  const stage = currentStage();
+  const context = chapterContextForAsk();
+  const mode = askState.mode;
+  let messages;
+  if (mode === "ask") {
+    messages = [
+      { role: "system", content: `你是 Luminary 深海科普導師。請根據以下章節內容回答學生問題。回答要短、口語、最多 3 句。如果問題與章節無關，可以禮貌帶回主題。\n\n${context}` },
+      { role: "user", content: userText },
+    ];
+  } else {
+    const openPrompt = stage?.openPrompt || "";
+    messages = [
+      { role: "system", content: `你是 Luminary 深海科普老師，要評閱學生答題。題目與章節內容如下，請判斷學生答案的正確程度。\n\n${context}\n\n題目：${openPrompt}\n\n回覆要：第一行包在 <verdict>correct</verdict>、<verdict>partial</verdict> 或 <verdict>wrong</verdict>，接著用 1-3 句話說明關鍵點與缺漏。語氣要鼓勵但精準。` },
+      { role: "user", content: `學生答案：${userText}` },
+    ];
+  }
+
+  askState.busy = true;
+  askSubmitBtnEl.disabled = true;
+  setAskStatus(mode === "ask" ? "AI 思考中…" : "AI 評分中…", "busy");
+  setAskResponse("");
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, mode }),
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || payload.details || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    setAskStatus("");
+    setAskResponse(escapeHtml(data.reply || "(沒有回覆)"), data.verdict || null);
+  } catch (error) {
+    setAskStatus(`AI 回應失敗：${error.message || error}`, "error");
+  } finally {
+    askState.busy = false;
+    askSubmitBtnEl.disabled = false;
+  }
+}
+
+async function startMicRecording() {
+  if (askState.recording) return;
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+    setAskStatus("此瀏覽器不支援錄音，請改用打字。", "error");
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    askState.recorderChunks = [];
+    recorder.addEventListener("dataavailable", (event) => {
+      if (event.data && event.data.size > 0) askState.recorderChunks.push(event.data);
+    });
+    recorder.addEventListener("stop", async () => {
+      stream.getTracks().forEach((track) => track.stop());
+      askState.recording = false;
+      askMicBtnEl.classList.remove("is-recording");
+      const blob = new Blob(askState.recorderChunks, { type: recorder.mimeType || "audio/webm" });
+      askState.recorderChunks = [];
+      if (blob.size === 0) {
+        setAskStatus("沒有錄到聲音。", "error");
+        return;
+      }
+      await transcribeBlob(blob);
+    });
+    recorder.start();
+    askState.recorder = recorder;
+    askState.recording = true;
+    askMicBtnEl.classList.add("is-recording");
+    setAskStatus("錄音中… 再點一次麥克風結束（最多 30 秒）。", "busy");
+    askState.recorderTimer = window.setTimeout(() => stopMicRecording(), 30_000);
+  } catch (error) {
+    setAskStatus(`無法啟動麥克風：${error.message || error}`, "error");
+  }
+}
+
+function stopMicRecording() {
+  if (!askState.recording || !askState.recorder) return;
+  if (askState.recorderTimer) {
+    clearTimeout(askState.recorderTimer);
+    askState.recorderTimer = 0;
+  }
+  try {
+    askState.recorder.stop();
+  } catch (_error) {
+    // already stopped
+  }
+}
+
+async function transcribeBlob(blob) {
+  setAskStatus("辨識語音中…", "busy");
+  try {
+    const formData = new FormData();
+    formData.append("audio", blob, "speech.webm");
+    const response = await fetch("/api/transcribe", { method: "POST", body: formData });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || payload.details || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.text) {
+      askInputEl.value = (askInputEl.value ? `${askInputEl.value} ` : "") + data.text;
+      setAskStatus("已轉成文字，可繼續編輯或直接送出。", "");
+    } else {
+      setAskStatus("沒有辨識出內容，請再試一次。", "error");
+    }
+  } catch (error) {
+    setAskStatus(`語音辨識失敗：${error.message || error}`, "error");
+  }
+}
+
+askModeAskBtnEl.addEventListener("click", () => {
+  askState.mode = "ask";
+  setAskResponse("");
+  setAskStatus("");
+  updateAskPanel();
+  askInputEl.focus();
+});
+
+askModeAnswerBtnEl.addEventListener("click", () => {
+  askState.mode = "answer";
+  setAskResponse("");
+  setAskStatus("");
+  updateAskPanel();
+  askInputEl.focus();
+});
+
+askSubmitBtnEl.addEventListener("click", () => { submitAsk(); });
+askInputEl.addEventListener("keydown", (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    event.preventDefault();
+    submitAsk();
+  }
+});
+
+askClearBtnEl.addEventListener("click", () => {
+  askInputEl.value = "";
+  setAskResponse("");
+  setAskStatus("");
+});
+
+askMicBtnEl.addEventListener("click", () => {
+  if (askState.recording) stopMicRecording();
+  else startMicRecording();
+});
+
+updateAskPanel();
+
 renderer.domElement.addEventListener("pointermove", onPointerMove);
 renderer.domElement.addEventListener("pointerdown", onPointerDown);
 renderer.domElement.addEventListener("pointerleave", () => {
@@ -2907,8 +3294,15 @@ if (synth) {
   if ("onvoiceschanged" in synth) synth.onvoiceschanged = loadVoiceList;
 }
 loadTtsConfig();
+loadDialogue().then(() => updateModeUI());
 
 window.addEventListener("resize", resize);
+window.addEventListener("keydown", (event) => {
+  if (event.shiftKey && (event.key === "B" || event.key === "b")) {
+    postProcessingEnabled = !postProcessingEnabled;
+    console.log(`Post-processing ${postProcessingEnabled ? "ON" : "OFF"}`);
+  }
+});
 resize();
 renderer.domElement.style.cursor = "grab";
 requestAnimationFrame(animate);
