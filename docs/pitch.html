@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Luminary 軟體升級 · 給 Kathy 的提案</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-0: #02050b;
+        --bg-1: #06101c;
+        --bg-2: #0a1828;
+        --line: rgba(160, 214, 255, 0.1);
+        --text: #edf6ff;
+        --text-soft: rgba(222, 235, 251, 0.7);
+        --text-muted: rgba(210, 227, 255, 0.55);
+        --accent: #6fd4ff;
+        --accent-2: #8ed3ff;
+        --good: #8be7b3;
+        --warn: #ffd28a;
+        --bad:  #ffb3a8;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+        background:
+          radial-gradient(circle at 20% -10%, rgba(88, 178, 255, 0.18), transparent 40%),
+          radial-gradient(circle at 90% 5%, rgba(80, 122, 255, 0.10), transparent 35%),
+          linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 65%);
+        background-attachment: fixed;
+        color: var(--text);
+        letter-spacing: 0.01em;
+        line-height: 1.65;
+      }
+      main { max-width: 1100px; margin: 0 auto; padding: 56px 28px 120px; }
+      .eyebrow {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 7px 11px; border-radius: 999px;
+        border: 1px solid rgba(148, 210, 255, 0.16);
+        background: rgba(124, 196, 255, 0.06);
+        color: #9ad9ff;
+        font-size: 11px; font-weight: 700;
+        letter-spacing: 0.16em; text-transform: uppercase;
+      }
+      .dot { width: 8px; height: 8px; border-radius: 999px; background: #52bfff; box-shadow: 0 0 12px rgba(82, 191, 255, 0.8); }
+      h1 {
+        margin: 18px 0 0;
+        font-size: clamp(34px, 5vw, 52px);
+        line-height: 1.05; letter-spacing: -0.03em; font-weight: 800;
+      }
+      h1 small { display: block; font-size: 16px; font-weight: 500; color: var(--text-soft); margin-top: 14px; letter-spacing: 0.01em; }
+      h2 {
+        margin: 56px 0 16px;
+        font-size: 13px; font-weight: 700; color: var(--accent-2);
+        letter-spacing: 0.18em; text-transform: uppercase;
+      }
+      h3 { margin: 0 0 10px; font-size: 22px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 750; }
+      p { color: var(--text-soft); margin: 0 0 12px; }
+      a { color: var(--accent); }
+      code {
+        background: rgba(124, 196, 255, 0.08);
+        border: 1px solid rgba(124, 196, 255, 0.14);
+        border-radius: 6px;
+        padding: 1px 6px;
+        font-family: ui-monospace, "SF Mono", Consolas, monospace;
+        font-size: 0.92em;
+      }
+      .lead {
+        margin-top: 26px;
+        padding: 24px 26px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 0% 0%, rgba(110, 184, 255, 0.06), transparent 35%),
+          linear-gradient(180deg, rgba(11, 22, 36, 0.92), rgba(7, 14, 24, 0.92));
+        font-size: 16px; line-height: 1.78; color: var(--text);
+      }
+      .lead strong { color: #e7f4ff; }
+      .pillRow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+      .pill {
+        padding: 8px 14px; border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(14, 24, 38, 0.72);
+        color: var(--text-soft);
+        font-size: 13px; font-weight: 600;
+      }
+      .pill.good { color: var(--good); border-color: rgba(140, 230, 180, 0.35); background: rgba(60, 180, 120, 0.12); }
+      .pill.warn { color: var(--warn); border-color: rgba(240, 200, 120, 0.35); background: rgba(220, 160, 60, 0.12); }
+      .pill.muted { color: var(--text-muted); }
+
+      .grid { display: grid; gap: 22px; grid-template-columns: 1fr; }
+      @media (min-width: 820px) { .grid.cols-2 { grid-template-columns: 1fr 1fr; } }
+      .card {
+        padding: 24px 26px 26px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 0% 0%, rgba(110, 184, 255, 0.05), transparent 30%),
+          linear-gradient(180deg, rgba(11, 22, 36, 0.86), rgba(7, 14, 24, 0.92));
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+      .card .badge {
+        display: inline-block; padding: 5px 10px; border-radius: 999px;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+        background: rgba(124, 196, 255, 0.1); color: var(--accent-2);
+        border: 1px solid rgba(124, 196, 255, 0.18);
+        margin-bottom: 12px;
+      }
+      .meta { color: var(--text-muted); font-size: 13px; margin-top: 16px; }
+      .meta strong { color: var(--text); font-weight: 700; }
+
+      /* Mockups */
+      .mockSidebar {
+        margin-top: 18px;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(126, 196, 255, 0.12);
+        background: linear-gradient(180deg, rgba(9, 18, 30, 0.92), rgba(4, 9, 17, 0.78));
+        font-size: 13px;
+      }
+      .mockH { font-size: 11px; color: var(--text-muted); letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; }
+      .mockBubble {
+        padding: 10px 12px; border-radius: 14px;
+        background: linear-gradient(180deg, rgba(14, 24, 38, 0.9), rgba(8, 16, 27, 0.96));
+        border: 1px solid rgba(124, 196, 255, 0.1);
+        margin: 8px 0; line-height: 1.55;
+      }
+      .mockBubble.active { border-color: rgba(127, 198, 255, 0.4); box-shadow: 0 0 0 3px rgba(124, 196, 255, 0.08); }
+      .mockBubble .who { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; margin-right: 8px; }
+      .mockBubble .who.narrator { color: #c0e0ff; }
+      .mockBubble .who.prey { color: #ffd2ec; }
+      .mockBubble .who.predator { color: #ffb38c; }
+      .mockTextarea {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px dashed rgba(124, 196, 255, 0.22);
+        background: rgba(8, 16, 27, 0.6);
+        color: var(--text-muted);
+        font-style: italic;
+        margin: 6px 0;
+      }
+      .mockBtnRow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+      .mockBtn {
+        padding: 7px 12px; border-radius: 12px;
+        border: 1px solid rgba(124, 196, 255, 0.16);
+        background: linear-gradient(180deg, rgba(14, 24, 38, 0.82), rgba(10, 17, 29, 0.9));
+        color: var(--text); font-size: 12px; font-weight: 700;
+      }
+      .mockBtn.active { border-color: rgba(127, 198, 255, 0.36); background: linear-gradient(180deg, rgba(18, 40, 68, 0.96), rgba(9, 20, 34, 0.98)); }
+      .mockBtn.mic { font-size: 14px; }
+      .mockVerdict {
+        display: inline-block; margin-top: 8px;
+        padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+        background: rgba(60, 180, 120, 0.22); color: var(--good); border: 1px solid rgba(140, 230, 180, 0.3);
+      }
+      .mockBefore .mockBubble.old { color: var(--text-muted); }
+      .glowBox {
+        margin-top: 18px;
+        height: 130px;
+        border-radius: 18px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(126, 196, 255, 0.12);
+        background:
+          radial-gradient(circle at 50% 70%, rgba(7, 18, 32, 1) 0%, rgba(4, 9, 17, 1) 100%);
+      }
+      .glowBox::before, .glowBox::after {
+        content: "";
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 999px;
+      }
+      .glowBox.before::before {
+        width: 38px; height: 38px;
+        background: radial-gradient(circle, rgba(120, 200, 255, 0.95) 0%, rgba(120, 200, 255, 0.18) 60%, transparent 70%);
+      }
+      .glowBox.after::before {
+        width: 38px; height: 38px;
+        background: radial-gradient(circle, rgba(140, 220, 255, 1) 0%, rgba(140, 220, 255, 0.55) 30%, transparent 65%);
+        filter: blur(0.5px);
+      }
+      .glowBox.after::after {
+        width: 220px; height: 220px;
+        background: radial-gradient(circle, rgba(120, 200, 255, 0.45) 0%, rgba(120, 200, 255, 0.1) 32%, transparent 60%);
+        mix-blend-mode: screen;
+      }
+      .glowLabel {
+        position: absolute; left: 12px; bottom: 10px;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      /* Decision section */
+      .decisions { display: grid; gap: 14px; grid-template-columns: 1fr; margin-top: 20px; }
+      @media (min-width: 760px) { .decisions { grid-template-columns: 1fr 1fr; } }
+      .qa {
+        padding: 18px 20px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(11, 22, 36, 0.78), rgba(7, 14, 24, 0.86));
+      }
+      .qa h4 { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: var(--text); }
+      .qa p { font-size: 13px; }
+      .qa .opts { display: grid; gap: 6px; margin-top: 10px; }
+      .qa .opts span {
+        padding: 8px 10px; border-radius: 10px;
+        border: 1px solid rgba(124, 196, 255, 0.12);
+        background: rgba(14, 24, 38, 0.6);
+        font-size: 12px;
+      }
+      .qa .opts span.recommend { border-color: rgba(140, 230, 180, 0.35); color: var(--good); }
+
+      /* Scope */
+      .scope { display: grid; gap: 14px; grid-template-columns: 1fr; margin-top: 16px; }
+      @media (min-width: 760px) { .scope { grid-template-columns: 1fr 1fr; } }
+      .scope > div {
+        padding: 18px 20px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+      }
+      .scope .yes { background: rgba(60, 180, 120, 0.06); border-color: rgba(140, 230, 180, 0.25); }
+      .scope .no  { background: rgba(220, 80, 80, 0.04); border-color: rgba(240, 130, 130, 0.18); }
+      .scope ul { margin: 8px 0 0 18px; padding: 0; }
+      .scope li { color: var(--text-soft); margin: 6px 0; font-size: 14px; }
+
+      /* Steps */
+      .steps { counter-reset: step; margin: 0; padding: 0; list-style: none; }
+      .steps li {
+        counter-increment: step;
+        position: relative;
+        padding: 12px 16px 12px 52px;
+        margin: 10px 0;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(11, 22, 36, 0.66);
+        font-size: 14px;
+      }
+      .steps li::before {
+        content: counter(step);
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        width: 28px; height: 28px; border-radius: 999px;
+        display: grid; place-items: center;
+        background: linear-gradient(180deg, rgba(101, 175, 255, 0.25), rgba(82, 191, 255, 0.12));
+        border: 1px solid rgba(124, 196, 255, 0.4);
+        color: var(--accent-2); font-weight: 800; font-size: 12px;
+      }
+      .steps code { color: var(--accent); }
+      hr { border: none; height: 1px; background: var(--line); margin: 64px 0 0; }
+      footer { color: var(--text-muted); font-size: 12px; margin-top: 18px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="eyebrow"><span class="dot"></span>Luminary 軟體升級提案 · for Kathy</span>
+      <h1>三件事，全部已經做完，等你回看。
+        <small>2026-05-29 · branch <code>feature/luminary-enhancements</code> · PR #1 已開（draft）</small>
+      </h1>
+
+      <div class="lead">
+        你提到的三個方向，我都做完了並推上 PR。<strong>Hardware / camera 那塊我完全沒碰</strong>，那部分仍然是你的範圍。
+        這份頁面是我做的事情的快速 summary，方便你快速 decide 要直接 merge、想討論、還是要我改。
+        <div class="pillRow">
+          <span class="pill good">✅ 多角色語音</span>
+          <span class="pill good">✅ 自由文字 Q&A + 語音輸入</span>
+          <span class="pill good">✅ 場景視覺強化 (Bloom)</span>
+          <span class="pill muted">🚫 硬體/相機 = 你的範圍</span>
+        </div>
+      </div>
+
+      <h2>① 多角色語音 · Multi-Voice Narration</h2>
+      <div class="grid cols-2">
+        <div class="card mockBefore">
+          <span class="badge">Before</span>
+          <h3>單一旁白，一個聲音講完整段</h3>
+          <p>影片解說模式只有一個旁白聲，所有章節都用同一個 <code>alloy</code> 念到底；如果 API 沒設好，會 fallback 到瀏覽器內建語音，聽起來偏機器人。</p>
+          <div class="mockSidebar">
+            <div class="mockH">影片解說 · 旁白</div>
+            <div class="mockBubble old">第四節，把視角切到獵物。對多數深海生物來說，黑巨口魚的紅燈幾乎像不存在，因此牠們甚至不知道自己正在被照射。</div>
+          </div>
+        </div>
+        <div class="card">
+          <span class="badge">After</span>
+          <h3>三角色對話：旁白 / 獵物 / 掠食者</h3>
+          <p>用 OpenAI <code>tts-1-hd</code> 三個聲音輪流講話，字幕顯示誰在說。Browser fallback 也保留，會用不同 pitch/rate 模擬不同角色。</p>
+          <div class="mockSidebar">
+            <div class="mockH">影片解說 · 第四節 紅光刺客</div>
+            <div class="mockBubble"><span class="who narrator">🎙️ 旁白 (alloy)</span>把視角切到獵物。</div>
+            <div class="mockBubble active"><span class="who prey">🦐 獵物 (nova)</span>周圍一片漆黑……我藏得很完美。</div>
+            <div class="mockBubble"><span class="who predator">🦈 掠食者 (onyx)</span>你以為紅色就能隱形嗎？我有別人沒有的眼睛。</div>
+          </div>
+          <div class="meta"><strong>檔案：</strong>新增 <code>assets/dialogue.zh-Hant.json</code>（24 句對白可直接編輯，不用碰 <code>app.js</code>）</div>
+        </div>
+      </div>
+
+      <h2>② 追問與練習 · Free-text Ask & Answer</h2>
+      <div class="grid cols-2">
+        <div class="card mockBefore">
+          <span class="badge">Before</span>
+          <h3>只有 3 個固定選項的選擇題</h3>
+          <p>原本的「理解檢查」是 3 個寫死的 ABC 選項，使用者沒辦法用自己的話表達。</p>
+          <div class="mockSidebar">
+            <div class="mockH">理解檢查</div>
+            <div class="mockBubble old">為什麼深海生物可以把紅色當作隱身斗篷？</div>
+            <div class="mockBubble old">A. 因為海水會優先吸收紅光</div>
+            <div class="mockBubble old">B. 因為紅光在海水中傳播最快</div>
+            <div class="mockBubble old">C. 因為深海生物普遍會發出紅光</div>
+          </div>
+        </div>
+        <div class="card">
+          <span class="badge">After</span>
+          <h3>原本選擇題保留 + 新增「追問與練習」面板</h3>
+          <p>選擇題沒拿掉，下面加一個面板，使用者可以自由打字或按 🎤 用語音問。兩個模式：</p>
+          <div class="mockSidebar">
+            <div class="mockH">追問與練習</div>
+            <div class="mockBtnRow"><span class="mockBtn active">追問</span><span class="mockBtn">答題</span></div>
+            <div class="mockTextarea">為什麼紅色在深海會變黑？</div>
+            <div class="mockBtnRow"><span class="mockBtn">詢問</span><span class="mockBtn mic">🎤</span></div>
+            <div class="mockBubble" style="margin-top: 10px;">紅蝦的紅色是「反射紅光」才看得到。八百米深處幾乎沒有紅光，沒得反射，於是它把殘餘的藍綠光也吸光，看起來就接近黑色。</div>
+          </div>
+          <div class="mockSidebar" style="margin-top: 12px;">
+            <div class="mockH">答題模式</div>
+            <div class="mockBtnRow"><span class="mockBtn">追問</span><span class="mockBtn active">答題</span></div>
+            <div class="mockTextarea">題目：用自己的話解釋為什麼紅蝦在 800 米會像黑色。</div>
+            <div class="mockBubble"><span class="mockVerdict">✓ 答對了</span><br/>抓到關鍵了：海水把紅光吸光，紅蝦沒紅光可反射。可以再補一句「殘餘藍綠光也被牠吸收」會更完整。</div>
+          </div>
+          <div class="meta"><strong>後端：</strong>新增 <code>/api/chat</code>（GPT-4o）+ <code>/api/transcribe</code>（Whisper）</div>
+        </div>
+      </div>
+
+      <h2>③ 場景視覺強化 · Cinematic Bloom</h2>
+      <div class="grid cols-2">
+        <div class="card mockBefore">
+          <span class="badge">Before</span>
+          <h3>3D 模型已經是 GLB（你之前就做好了）</h3>
+          <p>這部分的 GLB swap 你早就把 <code>createExternalActor()</code> 寫好了，模型已經在用 <code>counter-fish.glb</code>、<code>predator-shark.glb</code>、<code>crawfish.glb</code>、<code>glub-evolved.glb</code>。我沒重做。</p>
+          <p>但是發光的部分原本只是純色點光源，沒有 glow halo，魚腹的「反向照明」看起來不夠戲劇化。</p>
+          <div class="glowBox before"><div class="glowLabel">無 bloom · 點光源</div></div>
+        </div>
+        <div class="card">
+          <span class="badge">After</span>
+          <h3>加上 UnrealBloomPass + 加密霧</h3>
+          <p>所有發光元素都會自然 bloom（魚腹、紅光、紅燈、星光）。Fog 從 <code>5–22</code> 縮成 <code>4.5–20</code>，水下霧感更強。</p>
+          <p><strong>應急：</strong>如果在 demo 機上 frame rate 變差，按 <code>Shift+B</code> 可以即時關掉 bloom。</p>
+          <div class="glowBox after"><div class="glowLabel">Bloom + Fog · cinematic</div></div>
+          <div class="meta"><strong>實作：</strong>Three.js <code>EffectComposer</code> + <code>RenderPass</code> + <code>UnrealBloomPass</code>。失敗時自動 fallback 回直接渲染，不會 crash。</div>
+        </div>
+      </div>
+
+      <h2>什麼沒做 · Out of scope</h2>
+      <div class="scope">
+        <div class="yes">
+          <strong style="color: var(--good);">✅ 我做了</strong>
+          <ul>
+            <li>多角色 TTS（旁白／獵物／掠食者）</li>
+            <li>追問模式（GPT-4o 即時回答）</li>
+            <li>答題模式（GPT-4o 評分 + 顏色徽章）</li>
+            <li>Whisper 麥克風語音輸入</li>
+            <li>Bloom + 加密霧</li>
+            <li><code>/api/chat</code>、<code>/api/transcribe</code> 後端</li>
+            <li><code>.gitignore</code>、design spec、PR description</li>
+          </ul>
+        </div>
+        <div class="no">
+          <strong style="color: var(--bad);">🚫 我沒碰（你的範圍）</strong>
+          <ul>
+            <li>硬體 / camera / sensor 整合</li>
+            <li>圖像辨識（看到實體物體 → 對應主題）</li>
+            <li>手機觸控優化</li>
+            <li>把 <code>app.js</code> 拆成多個模組</li>
+            <li>英文翻譯</li>
+            <li>DALL-E / 動態素材生成（評估後我認為 demo 風險太高）</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>三件事需要你決定 · Decisions</h2>
+      <div class="decisions">
+        <div class="qa">
+          <h4>① 對白文字你 OK 嗎？</h4>
+          <p>我寫的對白在 <code>assets/dialogue.zh-Hant.json</code>，你可以直接改任何句子，不用懂程式。</p>
+          <div class="opts">
+            <span class="recommend">A 我先看再決定要不要改 ← 我建議</span>
+            <span>B 你重寫整套</span>
+            <span>C 直接 merge</span>
+          </div>
+        </div>
+        <div class="qa">
+          <h4>② 第四章的「掠食者」3D 模型用哪個？</h4>
+          <p>目前用 <code>glub-evolved.glb</code>（你之前選的）。有點外星感，比 <code>predator-shark.glb</code> 像深海。</p>
+          <div class="opts">
+            <span class="recommend">A 維持 glub-evolved ← 我建議</span>
+            <span>B 換 predator-shark（明顯是鯊魚）</span>
+            <span>C 你之後找更像黑巨口魚的 GLB 再換</span>
+          </div>
+        </div>
+        <div class="qa">
+          <h4>③ TTS 失敗時怎麼辦？</h4>
+          <p>API 掛掉時，會 fallback 到瀏覽器內建語音（同一個聲音念全部）。</p>
+          <div class="opts">
+            <span class="recommend">A 維持 fallback ← 我建議（demo 不會啞）</span>
+            <span>B API 掛了就直接停止語音、只顯示字幕</span>
+          </div>
+        </div>
+        <div class="qa">
+          <h4>④ 你想要的合併方式</h4>
+          <p>PR 目前是 draft 狀態。</p>
+          <div class="opts">
+            <span class="recommend">A 你直接 merge 就好 ← 最快</span>
+            <span>B 你 inline 留 comments 我再改</span>
+            <span>C 我們 demo 前一起 review 一次</span>
+          </div>
+        </div>
+      </div>
+
+      <h2>怎麼跑 · How to run</h2>
+      <ol class="steps">
+        <li>把 <code>feature/luminary-enhancements</code> 拉下來：<code>git fetch origin && git checkout feature/luminary-enhancements</code></li>
+        <li>複製 <code>.env.example</code> 為 <code>.env</code>，填入 <code>OPENAI_API_KEY</code>（INIMIG 那邊用 openai-next.com 的 key 沒問題，你用自己的或共用的都可以）</li>
+        <li>跑 <code>python run_demo.py</code> ──瀏覽器自動開啟</li>
+        <li>切到「影片解說」聽三個聲音；切回「互動模式」試右下方的「追問與練習」</li>
+        <li>有問題的地方直接在 <a href="https://github.com/530kathy/Luminary/pull/1">PR #1</a> 留 inline comment</li>
+      </ol>
+
+      <hr/>
+      <footer>
+        Luminary · 軟體升級提案 · branch <code>feature/luminary-enhancements</code> · PR <a href="https://github.com/530kathy/Luminary/pull/1">#1</a>
+        <br/>有任何想砍掉重做的地方都直接告訴我，沒問題。
+      </footer>
+    </main>
+  </body>
+</html>
